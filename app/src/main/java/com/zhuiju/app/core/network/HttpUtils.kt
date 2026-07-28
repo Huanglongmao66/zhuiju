@@ -69,7 +69,7 @@ object HttpUtils {
     /**
      * 执行请求并转换异常
      */
-    internal fun execute(client: OkHttpClient, request: Request): String {
+    fun execute(client: OkHttpClient, request: Request): String {
         try {
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
