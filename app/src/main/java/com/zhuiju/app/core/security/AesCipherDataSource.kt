@@ -41,7 +41,7 @@ class AesCipherDataSource(
         require(iv.size == AppConstants.AES_IV_LENGTH) { "AES IV 长度必须为 ${AppConstants.AES_IV_LENGTH} 字节" }
     }
 
-    override fun addTransferListener(transferListener: TransferListener) {
+    override fun addTransferListener(transferListener: TransferListener<*>) {
         upstream.addTransferListener(transferListener)
     }
 

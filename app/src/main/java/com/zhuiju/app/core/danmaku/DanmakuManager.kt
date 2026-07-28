@@ -79,7 +79,6 @@ class DanmakuManager(
 
         context.setDuplicateMergingEnabled(false)  // 禁止重复弹幕合并
             .setMaximumVisibleSizeInScreen(maxCount)
-            .setDanmakuSyncFrameRate(fps)
             .setScrollSpeedFactor(1.2f)
 
         LogUtils.i("弹幕配置: maxCount=$maxCount, fps=$fps, isLowEnd=$isLowEnd", TAG)

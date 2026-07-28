@@ -32,7 +32,7 @@ object DanmakuBuilder {
             this.time = timeMs
             this.text = text
             this.textColor = color
-            this.textSize = textSize * (context.danmakuFactory?.let { 1f } ?: 1f)
+            this.textSize = textSize
             this.borderColor = 0x33000000  // 轻微描边
         }
     }

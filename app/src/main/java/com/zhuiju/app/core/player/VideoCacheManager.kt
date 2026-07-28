@@ -72,7 +72,7 @@ object VideoCacheManager {
      */
     fun pauseDownload(videoId: String) {
         LogUtils.i("暂停缓存: videoId=$videoId", TAG)
-        DownloadService.sendSetStopReason(ZhuiJuApp.instance, VideoDownloadService::class.java, videoId, "paused", false)
+        DownloadService.sendSetStopReason(ZhuiJuApp.instance, VideoDownloadService::class.java, videoId, 1, false)
     }
 
     /**
