@@ -2,6 +2,7 @@ package com.zhuiju.app.core.ui
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.viewbinding.ViewBinding
@@ -9,7 +10,6 @@ import com.zhuiju.app.core.player.PowerManager
 import com.zhuiju.app.util.LeakDetector
 import com.zhuiju.app.util.LogUtils
 import com.zhuiju.app.util.ToastUtils
-import kotlinx.coroutines.Lifecycle
 import kotlinx.coroutines.launch
 
 /**
