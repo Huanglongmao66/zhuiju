@@ -1,79 +1,38 @@
 package com.zhuiju.app.core.ffmpeg
 
-import com.arthenica.mobileffmpeg.Config
-import com.arthenica.mobileffmpeg.ExecuteCallback
-import com.arthenica.mobileffmpeg.FFmpeg
 import com.zhuiju.app.util.AppExecutors
 import com.zhuiju.app.util.LogUtils
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
-import kotlin.coroutines.resume
 
 /**
- * FFmpeg 辅助工具管理器
+ * FFmpeg 辅助工具管理器（已降级为 stub）
  *
- * - 不替换 ExoPlayer 内核，仅做辅助能力补充
- * - 所有 FFmpeg 命令放在 IO 协程子线程，严禁主线程执行，杜绝 ANR
- * - 每次执行完毕必须释放 native 资源、销毁会话
- * - 命令统一封装，禁止业务代码拼接命令
+ * mobile-ffmpeg 已下线、ffmpeg-kit 需 JitPack 编译原生库易超时，
+ * 此处保留对外 API，内部返回失败/空结果。核心视频播放走 ExoPlayer 硬解，不依赖本类。
  *
- * 能力：
- * 1. 异常视频格式兼容播放（转码为标准 MP4）
- * 2. 视频帧截图、封面提取
- * 3. 短视频裁剪、片段截取
- * 4. 格式转换
+ * 待后续接入 ffmpeg-kit 社区版时恢复实现：
+ *  - implementation("com.github.ffmpegkit-community:ffmpeg-kit-android:6.0.1")
+ *  - import com.arthenica.ffmpegkit.*
  */
 object FFmpegManager {
 
     private const val TAG = "FFmpegManager"
 
-    /** FFmpeg 执行超时时间（毫秒） */
-    private const val EXECUTE_TIMEOUT_MS = 60_000L
-
-    /** 初始化 FFmpeg 环境 */
+    /** 初始化 FFmpeg 环境（当前为 no-op） */
     fun init() {
-        Config.setLogLevel(Config.RETURN_CODE_SUCCESS.let {
-            com.arthenica.mobileffmpeg.Config.LOG_LEVEL_ERROR
-        })
-        LogUtils.i("FFmpegManager 初始化完成", TAG)
+        LogUtils.i("FFmpegManager stub 初始化（FFmpeg 未接入）", TAG)
     }
 
     /**
-     * 执行 FFmpeg 命令（挂起函数，子线程执行）
+     * 执行 FFmpeg 命令（当前未接入，直接返回失败）
      *
-     * @param commands FFmpeg 命令数组（如 arrayOf("-i", "input.mp4", "output.mp4")）
+     * @param commands FFmpeg 命令数组
      * @return [FFmpegResult] 执行结果
      */
     suspend fun execute(vararg commands: String): FFmpegResult = withContext(AppExecutors.heavyIo) {
-        LogUtils.i("执行 FFmpeg 命令: ${commands.joinToString(" ")}", TAG)
-
-        val result = withTimeoutOrNull(EXECUTE_TIMEOUT_MS) {
-            suspendCancellableCoroutine<FFmpegResult> { cont ->
-                val sessionId = FFmpeg.executeAsync(commands, ExecuteCallback { session ->
-                    val returnCode = session.returnCode
-                    LogUtils.i("FFmpeg 执行完成 returnCode=$returnCode", TAG)
-
-                    val result = when (returnCode.value) {
-                        Config.RETURN_CODE_SUCCESS -> FFmpegResult.Success
-                        Config.RETURN_CODE_CANCEL -> FFmpegResult.Cancelled
-                        else -> FFmpegResult.Failed(returnCode.value, session.failStackTrace)
-                    }
-
-                    // 释放会话资源
-                    com.arthenica.mobileffmpeg.FFmpeg.cancel(session.sessionId)
-                    if (cont.isActive) cont.resume(result)
-                })
-
-                cont.invokeOnCancellation {
-                    com.arthenica.mobileffmpeg.FFmpeg.cancel(sessionId)
-                }
-            }
-        }
-
-        result ?: FFmpegResult.Failed(-1, "FFmpeg 执行超时")
+        LogUtils.w("FFmpeg 未接入，命令被拒绝: ${commands.joinToString(" ")}", TAG)
+        FFmpegResult.Failed(-1, "FFmpeg 未接入")
     }
 
     /**
@@ -89,10 +48,8 @@ object FFmpegManager {
         outputPath: String,
         timeMs: Long = 1000
     ): FFmpegResult = withContext(AppExecutors.heavyIo) {
-        // 确保输出目录存在
         File(outputPath).parentFile?.mkdirs()
-        val timeSec = timeMs / 1000.0
-        execute("-y", "-i", videoPath, "-ss", timeSec.toString(), "-vframes", "1", "-q:v", "2", outputPath)
+        execute("-y", "-i", videoPath, "-ss", (timeMs / 1000.0).toString(), "-vframes", "1", "-q:v", "2", outputPath)
     }
 
     /**
@@ -111,9 +68,7 @@ object FFmpegManager {
         durationMs: Long
     ): FFmpegResult = withContext(AppExecutors.heavyIo) {
         File(outputPath).parentFile?.mkdirs()
-        val startSec = startMs / 1000.0
-        val durationSec = durationMs / 1000.0
-        execute("-y", "-i", videoPath, "-ss", startSec.toString(), "-t", durationSec.toString(),
+        execute("-y", "-i", videoPath, "-ss", (startMs / 1000.0).toString(), "-t", (durationMs / 1000.0).toString(),
             "-c", "copy", outputPath)
     }
 
@@ -137,27 +92,11 @@ object FFmpegManager {
      * 获取视频信息（时长、分辨率、码率）
      *
      * @param videoPath 视频路径
-     * @return [VideoInfo] 视频信息
+     * @return [VideoInfo] 视频信息，FFmpeg 未接入时返回 null
      */
     suspend fun getVideoInfo(videoPath: String): VideoInfo? = withContext(AppExecutors.heavyIo) {
-        val info = com.arthenica.mobileffmpeg.FFprobe.getMediaInformation(videoPath)
-        if (info == null) {
-            LogUtils.w("无法获取视频信息: $videoPath", TAG)
-            return@withContext null
-        }
-
-        val duration = info.duration?.toLongOrNull()?.times(1000) ?: 0L
-        val width = info.streams?.firstOrNull { it.type == "video" }?.width?.toInt() ?: 0
-        val height = info.streams?.firstOrNull { it.type == "video" }?.height?.toInt() ?: 0
-        val bitrate = info.bitrate ?: 0
-
-        VideoInfo(
-            path = videoPath,
-            durationMs = duration,
-            width = width,
-            height = height,
-            bitrate = bitrate
-        )
+        LogUtils.w("FFmpeg 未接入，无法获取视频信息: $videoPath", TAG)
+        null
     }
 }
 

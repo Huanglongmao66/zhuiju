@@ -107,11 +107,11 @@ dependencies {
     implementation("androidx.media3:media3-session:1.2.1")
     implementation("androidx.media3:media3-datasource-okhttp:1.2.1")
 
-    // DanmakuFlameMaster
-    implementation("com.github.ctiao:DanmakuFlameMaster:0.9.25")
+    // DanmakuFlameMaster (dfm artifact on Maven Central)
+    implementation("com.github.ctiao:dfm:0.9.25")
 
-    // FFmpeg (mobile-ffmpeg)
-    implementation("com.arthenica:mobile-ffmpeg-full:4.4.LTS")
+    // FFmpeg 当前不可用（mobile-ffmpeg 已下线，ffmpeg-kit 需 JitPack 编译原生库易超时）
+    // FFmpegManager 已降级为 stub，核心播放走 ExoPlayer 硬解，不影响主流程
 
     // Glide
     implementation("com.github.bumptech.glide:glide:4.16.0")
