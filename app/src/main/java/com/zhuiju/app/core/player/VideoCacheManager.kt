@@ -80,7 +80,7 @@ object VideoCacheManager {
      */
     fun resumeDownload(videoId: String) {
         LogUtils.i("继续缓存（断点续传）: videoId=$videoId", TAG)
-        DownloadService.sendSetStopReason(ZhuiJuApp.instance, VideoDownloadService::class.java, videoId, null, false)
+        DownloadService.sendSetStopReason(ZhuiJuApp.instance, VideoDownloadService::class.java, videoId, 0, false)
     }
 
     /**

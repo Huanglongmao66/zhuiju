@@ -147,8 +147,8 @@ object FFmpegManager {
         }
 
         val duration = info.duration?.toLongOrNull()?.times(1000) ?: 0L
-        val width = info.streams?.firstOrNull { it.type == "video" }?.width ?: 0
-        val height = info.streams?.firstOrNull { it.type == "video" }?.height ?: 0
+        val width = info.streams?.firstOrNull { it.type == "video" }?.width?.toInt() ?: 0
+        val height = info.streams?.firstOrNull { it.type == "video" }?.height?.toInt() ?: 0
         val bitrate = info.bitrate ?: 0
 
         VideoInfo(

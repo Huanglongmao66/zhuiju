@@ -33,11 +33,24 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: |
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee build-debug.log
+          exit ${PIPESTATUS[0]}
 
       - name: Build Release APK
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        run: |
+          ./gradlew assembleRelease --no-daemon --stacktrace 2>&1 | tee build-release.log
+          exit ${PIPESTATUS[0]}
         continue-on-error: true
+
+      - name: Show Build Errors
+        if: failure()
+        run: |
+          echo "=== 编译错误汇总 ==="
+          grep -E "^e:|error:|FAILURE:|What went wrong" build-debug.log 2>/dev/null | head -50 || echo "No error patterns found in build-debug.log"
+          echo ""
+          echo "=== 构建日志最后 100 行 ==="
+          tail -100 build-debug.log 2>/dev/null || echo "No build-debug.log found"
 
       - name: List APK files
         if: always()

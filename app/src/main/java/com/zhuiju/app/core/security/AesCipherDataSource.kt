@@ -30,7 +30,7 @@ class AesCipherDataSource(
     private val upstream: DataSource
 ) : DataSource {
 
-    private const val TAG = "AesCipherDataSource"
+    private val TAG = "AesCipherDataSource"
 
     private var cipher: Cipher? = null
     private var bytesRemaining: Long = 0
