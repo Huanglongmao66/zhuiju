@@ -31,7 +31,7 @@ class DanmakuManager(
     private val callback: DanmakuCallback? = null
 ) {
 
-    private const val TAG = "DanmakuManager"
+    private val TAG = "DanmakuManager"
 
     /** 弹幕上下文配置 */
     private val context: DanmakuContext = DanmakuContext.create()

@@ -38,7 +38,7 @@ class GestureController(
     private val callback: GestureCallback? = null
 ) : GestureDetector.SimpleOnGestureListener() {
 
-    private const val TAG = "GestureController"
+    private val TAG = "GestureController"
 
     private val audioManager: AudioManager by lazy {
         activity.getSystemService(Context.AUDIO_SERVICE) as AudioManager

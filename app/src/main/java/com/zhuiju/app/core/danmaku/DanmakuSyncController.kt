@@ -21,7 +21,7 @@ class DanmakuSyncController(
     private val danmakuManager: DanmakuManager
 ) {
 
-    private const val TAG = "DanmakuSyncController"
+    private val TAG = "DanmakuSyncController"
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var syncJob: Job? = null

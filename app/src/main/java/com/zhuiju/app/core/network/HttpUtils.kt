@@ -54,11 +54,11 @@ object HttpUtils {
     /**
      * POST JSON 请求
      */
-    suspend fun postJson(
+    suspend inline fun <reified T> postJson(
         url: String,
-        body: Any
+        body: T
     ): String = withContext(Dispatchers.IO) {
-        val jsonStr = json.encodeToString(kotlinx.serialization.serializer(body::class.java), body)
+        val jsonStr = json.encodeToString(body)
         val request = Request.Builder()
             .url(url)
             .post(jsonStr.toRequestBody(MEDIA_TYPE_JSON.toMediaType()))

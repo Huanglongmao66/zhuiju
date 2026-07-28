@@ -1,7 +1,7 @@
 package com.zhuiju.app.core.player
 
 import android.content.Context
-import android.os.PowerManager
+import android.os.PowerManager as AndroidPowerManager
 import com.zhuiju.app.ZhuiJuApp
 import com.zhuiju.app.util.LogUtils
 
@@ -29,13 +29,13 @@ object PowerManager {
     private const val BACKGROUND_TAG = "zhuiju:background_play"
 
     /** 屏幕常亮 WakeLock（播放期间） */
-    private var screenOnWakeLock: PowerManager.WakeLock? = null
+    private var screenOnWakeLock: AndroidPowerManager.WakeLock? = null
 
     /** 后台播放 WakeLock（保证 CPU 不休眠） */
-    private var backgroundWakeLock: PowerManager.WakeLock? = null
+    private var backgroundWakeLock: AndroidPowerManager.WakeLock? = null
 
-    private val powerManager: PowerManager by lazy {
-        ZhuiJuApp.instance.getSystemService(Context.POWER_SERVICE) as PowerManager
+    private val powerManager: AndroidPowerManager by lazy {
+        ZhuiJuApp.instance.getSystemService(Context.POWER_SERVICE) as AndroidPowerManager
     }
 
     /**
@@ -50,7 +50,7 @@ object PowerManager {
                 return
             }
             screenOnWakeLock = powerManager.newWakeLock(
-                PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ON_AFTER_RELEASE,
+                AndroidPowerManager.SCREEN_BRIGHT_WAKE_LOCK or AndroidPowerManager.ON_AFTER_RELEASE,
                 SCREEN_ON_TAG
             ).apply {
                 setReferenceCounted(false)
@@ -87,7 +87,7 @@ object PowerManager {
                 return
             }
             backgroundWakeLock = powerManager.newWakeLock(
-                PowerManager.PARTIAL_WAKE_LOCK,
+                AndroidPowerManager.PARTIAL_WAKE_LOCK,
                 BACKGROUND_TAG
             ).apply {
                 setReferenceCounted(false)

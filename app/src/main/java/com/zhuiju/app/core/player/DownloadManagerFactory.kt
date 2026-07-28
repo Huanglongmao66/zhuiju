@@ -51,8 +51,8 @@ object DownloadManagerFactory {
             // 配置 HttpDataSource 复用 OkHttp
             val httpFactory = DefaultHttpDataSource.Factory()
                 .setUserAgent("ZhuiJuApp")
-                .setConnectTimeoutMs(AppConstants.NET_TIMEOUT_SLICE_S * 1000)
-                .setReadTimeoutMs(AppConstants.NET_TIMEOUT_SLICE_S * 1000)
+                .setConnectTimeoutMs((AppConstants.NET_TIMEOUT_SLICE_S * 1000).toInt())
+                .setReadTimeoutMs((AppConstants.NET_TIMEOUT_SLICE_S * 1000).toInt())
 
             val dataSourceFactory = DefaultDataSource.Factory(context, httpFactory)
             val cacheDataSourceFactory = CacheDataSource.Factory()
