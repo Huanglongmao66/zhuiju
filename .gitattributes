@@ -1,0 +1,25 @@
+# 强制 gradlew 使用 LF 行尾（Linux/macOS 执行需要）
+gradlew text eol=lf
+gradlew.bat text eol=crlf
+
+# 二进制文件
+*.jar binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.so binary
+*.dex binary
+
+# Kotlin/Java/XML 使用本平台默认行尾
+*.kt text
+*.java text
+*.xml text
+*.kts text
+*.gradle text
+*.properties text
+*.md text
+*.yml text
+*.yaml text
