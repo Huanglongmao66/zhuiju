@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 通用圆角 -->
+    <dimen name="corner_card">12dp</dimen>
+    <dimen name="corner_button">8dp</dimen>
+    <dimen name="corner_tag">4dp</dimen>
+
+    <!-- 通用间距 -->
+    <dimen name="spacing_small">10dp</dimen>
+    <dimen name="spacing_medium">15dp</dimen>
+    <dimen name="spacing_large">20dp</dimen>
+
+    <!-- 触控区域最小尺寸 -->
+    <dimen name="touch_target_min">48dp</dimen>
+
+    <!-- 控制栏高度 -->
+    <dimen name="player_control_bar_height">56dp</dimen>
+
+    <!-- 弹幕 -->
+    <dimen name="danmaku_text_size_default">14sp</dimen>
+    <dimen name="danmaku_text_size_large">16sp</dimen>
+    <dimen name="danmaku_text_size_small">12sp</dimen>
+    <dimen name="danmaku_line_spacing">25dp</dimen>
+
+    <!-- 文字字号 -->
+    <dimen name="text_size_title">18sp</dimen>
+    <dimen name="text_size_body">14sp</dimen>
+    <dimen name="text_size_caption">12sp</dimen>
+</resources>
