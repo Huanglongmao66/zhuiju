@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/player_bg">
+
+    <!-- 底层：视频画布 TextureView -->
+    <TextureView
+        android:id="@+id/texture_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center" />
+
+    <!-- 中层：弹幕View -->
+    <master.flame.danmaku.ui.widget.DanmakuView
+        android:id="@+id/danmaku_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 中层：手势浮窗（亮度/音量/进度提示） -->
+    <FrameLayout
+        android:id="@+id/gesture_overlay"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_gravity="center"
+        android:background="@color/player_gesture_overlay_bg"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tv_gesture_hint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textColor="@color/white"
+            android:textSize="14sp" />
+    </FrameLayout>
+
+    <!-- 顶层：加载/状态遮罩 -->
+    <FrameLayout
+        android:id="@+id/status_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/player_bg">
+
+        <ProgressBar
+            android:id="@+id/progress_loading"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tv_error"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/btn_retry"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="60dp"
+            android:text="重试"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <!-- 顶层：底部控制栏 -->
+    <LinearLayout
+        android:id="@+id/control_bar_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/player_control_bar_height"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:background="@color/player_control_bar_bg"
+        android:paddingHorizontal="@dimen/spacing_medium">
+
+        <!-- 进度条 -->
+        <SeekBar
+            android:id="@+id/seek_bar"
+            android:layout_width="match_parent"
+            android:layout_height="24dp"
+            android:maxHeight="3dp"
+            android:progressTint="@color/player_progress"
+            android:progressBackgroundTint="@color/player_progress_track"
+            android:thumbTint="@color/player_progress" />
+
+        <!-- 按钮区 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageButton
+                android:id="@+id/btn_play_pause"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_media_play"
+                android:contentDescription="播放/暂停" />
+
+            <TextView
+                android:id="@+id/tv_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_small"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:text="00:00/00:00" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <ImageButton
+                android:id="@+id/btn_danmaku"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginEnd="@dimen/spacing_small"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_view"
+                android:contentDescription="弹幕" />
+
+            <ImageButton
+                android:id="@+id/btn_speed"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginEnd="@dimen/spacing_small"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_recent_history"
+                android:contentDescription="倍速" />
+
+            <ImageButton
+                android:id="@+id/btn_fullscreen"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_rotate"
+                android:contentDescription="全屏" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 顶层：顶部控制栏（返回、标题） -->
+    <LinearLayout
+        android:id="@+id/control_bar_top"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/player_control_bar_height"
+        android:layout_gravity="top"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@color/player_control_bar_bg"
+        android:paddingHorizontal="@dimen/spacing_medium">
+
+        <ImageButton
+            android:id="@+id/btn_back"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_revert"
+            android:contentDescription="返回" />
+
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="@dimen/spacing_small"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+
+</FrameLayout>
