@@ -51,24 +51,20 @@ jobs:
           echo "=== 编译错误汇总 ==="
           grep -E "^e:|error:|FAILURE:|What went wrong" build-debug.log 2>/dev/null | head -50 || echo "No error patterns found in build-debug.log"
           echo ""
-          echo "=== 构建日志最后 80 行 ==="
-          tail -80 build-debug.log 2>/dev/null || echo "No build-debug.log found"
-          # 将错误作为 commit comment 发布，便于通过 API 读取
-          ERRORS=$(grep -E "^e:|error:|FAILURE:|What went wrong" build-debug.log 2>/dev/null | head -30 || echo "No errors found")
-          BODY=$(cat <<'ENDOFCOMMENT'
-          ## Build Errors
+          echo "=== 构建日志最后 200 行 ==="
+          tail -200 build-debug.log 2>/dev/null || echo "No build-debug.log found"
+          # 将构建日志最后 200 行作为 commit comment 发布
+          LOG_TAIL=$(tail -200 build-debug.log 2>/dev/null || echo "No build-debug.log found")
+          jq -n --arg body "## Build Log (last 200 lines)
 
-          ```
-          __ERRORS_PLACEHOLDER__
-          ```
-          ENDOFCOMMENT
-          )
-          BODY="${BODY//__ERRORS_PLACEHOLDER__/$ERRORS}"
+          \`\`\`
+          $LOG_TAIL
+          \`\`\`" '{body: $body}' > /tmp/payload.json
           curl -s -X POST \
             -H "Authorization: token $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github+json" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/comments" \
-            -d "$(jq -n --arg b "$BODY" '{body: $b}')"
+            -d @/tmp/payload.json
 
       - name: List APK files
         if: always()
