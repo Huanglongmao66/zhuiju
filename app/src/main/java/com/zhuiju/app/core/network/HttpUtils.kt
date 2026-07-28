@@ -27,13 +27,13 @@ import javax.net.ssl.SSLException
  */
 object HttpUtils {
 
-    internal val json = Json {
+    val json = Json {
         ignoreUnknownKeys = true
         coerceInputValues = true
         encodeDefaults = true
     }
 
-    internal const val MEDIA_TYPE_JSON = "application/json; charset=utf-8"
+    const val MEDIA_TYPE_JSON = "application/json; charset=utf-8"
 
     /**
      * GET 请求
