@@ -5,6 +5,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.viewbinding.ViewBinding
+import com.zhuiju.app.core.player.PowerManager
+import com.zhuiju.app.util.LeakDetector
 import com.zhuiju.app.util.LogUtils
 import com.zhuiju.app.util.ToastUtils
 import kotlinx.coroutines.Lifecycle
@@ -65,6 +67,9 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
 
         LogUtils.i("$TAG onCreate", TAG)
 
+        // 监控 Activity 内存泄漏（仅 Debug 包生效）
+        LeakDetector.watch(this, TAG)
+
         if (enableImmersive) {
             setupImmersive()
         }
@@ -123,6 +128,8 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        // 退出 Activity 时释放屏幕常亮，避免 WakeLock 泄漏
+        PowerManager.releaseScreenOn()
         LogUtils.i("$TAG onDestroy", TAG)
     }
 }

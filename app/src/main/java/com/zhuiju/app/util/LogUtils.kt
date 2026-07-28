@@ -12,11 +12,20 @@ import com.zhuiju.app.BuildConfig
  */
 object LogUtils {
 
-    /** 全局日志开关，release 包自动关闭 */
-    val isLogEnabled: Boolean = BuildConfig.DEBUG
+    /** 全局日志开关，release 包自动关闭；可由 [init] 显式控制 */
+    var isLogEnabled: Boolean = BuildConfig.DEBUG
+        private set
 
     /** 敏感信息过滤开关（密钥、视频地址等） */
     var sensitiveFilterEnabled = true
+
+    /**
+     * 显式初始化日志开关（一般在 Application.onCreate 中调用）
+     * @param enable 是否开启详细日志
+     */
+    fun init(enable: Boolean = BuildConfig.DEBUG) {
+        isLogEnabled = enable
+    }
 
     fun v(msg: String, tag: String? = null) {
         if (isLogEnabled) Log.v(getTag(tag), msg)

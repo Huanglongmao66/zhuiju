@@ -12,6 +12,7 @@ import com.zhuiju.app.core.danmaku.DanmakuSyncController
 import com.zhuiju.app.core.player.GestureController
 import com.zhuiju.app.core.player.PlaybackState
 import com.zhuiju.app.core.player.PlayerManager
+import com.zhuiju.app.core.player.PowerManager
 import com.zhuiju.app.core.player.ProgressInfo
 import com.zhuiju.app.databinding.ActivityLongVideoPlayerBinding
 import com.zhuiju.app.util.LogUtils
@@ -50,6 +51,9 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
         initGesture()
         initControlBar()
         collectPlayerState()
+
+        // 播放期间屏幕常亮
+        PowerManager.acquireScreenOn()
 
         // 开始播放
         val savedPosition = com.zhuiju.app.core.player.PlayHistoryManager.getPosition(testVideoId)
@@ -225,6 +229,8 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
             com.zhuiju.app.core.player.PlayHistoryManager.savePosition(testVideoId, progress.current, progress.total)
         }
         danmakuSyncController.release()
+        // 释放屏幕常亮
+        PowerManager.releaseScreenOn()
         LogUtils.i("LongVideoPlayerActivity onDestroy", "LongVideoPlayer")
     }
 }

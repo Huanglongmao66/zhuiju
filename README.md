@@ -3,10 +3,11 @@
 > 一句话定位：基于 Android 原生技术栈打造的商用级视频播放应用，集长视频点播、抖音式短视频、本地播放、弹幕互动于一体的全场景追剧体验。
 
 ![Kotlin](https://img.shields.io/badge/Kotlin-1.9+-7F52FF?logo=kotlin&logoColor=white)
-![ExoPlayer](https://img.shields.io/badge/ExoPlayer-2.19+-FF6F00?logo=android&logoColor=white)
+![ExoPlayer](https://img.shields.io/badge/ExoPlayer-1.2.1-FF6F00?logo=android&logoColor=white)
 ![Android](https://img.shields.io/badge/Android-5.0%2B-green?logo=android&logoColor=white)
-![FFmpeg](https://img.shields.io/badge/FFmpeg-6.x-007808?logo=ffmpeg&logoColor=white)
+![FFmpeg](https://img.shields.io/badge/FFmpeg-4.4.LTS-007808?logo=ffmpeg&logoColor=white)
 ![Jetpack](https://img.shields.io/badge/Jetpack-MVVM-03A9F4?logo=android&logoColor=white)
+![Version](https://img.shields.io/badge/Version-1.0.0-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
 ---

@@ -56,5 +56,11 @@
             </intent-filter>
         </service>
 
+        <!-- 后台播放保活服务（前台 Service，音频播放保活） -->
+        <service
+            android:name=".core.player.BackgroundPlayService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="false" />
+
     </application>
 </manifest>
