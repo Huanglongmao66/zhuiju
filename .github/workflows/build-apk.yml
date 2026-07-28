@@ -68,6 +68,8 @@ jobs:
       - name: List APK files
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
+          echo "=== All APK files ==="
+          find app/build/outputs/apk -name "*.apk" -type f || true
           echo "=== Debug APK ==="
           ls -la app/build/outputs/apk/debug/ || true
           echo "=== Release APK ==="
@@ -76,13 +78,13 @@ jobs:
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           generate_release_notes: true
-          files: |
-            app/build/outputs/apk/debug/app-debug.apk
-            app/build/outputs/apk/release/app-release.apk
+          files: app/build/outputs/apk/**/*.apk
 
       - name: Check build results
         run: |
