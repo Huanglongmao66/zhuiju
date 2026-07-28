@@ -137,7 +137,7 @@ class GestureController(
                 val percent = dx / totalWidth
                 val totalDuration = playerManager.progress.value.total
                 if (totalDuration > 0) {
-                    seekTargetMs = (seekTargetMs + percent * totalDuration).coerceIn(0, totalDuration)
+                    seekTargetMs = (seekTargetMs + (percent * totalDuration).toLong()).coerceIn(0L, totalDuration)
                     callback?.onSeekPreview(seekTargetMs, totalDuration)
                 }
             }

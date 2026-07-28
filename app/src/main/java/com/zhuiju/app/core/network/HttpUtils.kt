@@ -27,13 +27,13 @@ import javax.net.ssl.SSLException
  */
 object HttpUtils {
 
-    private val json = Json {
+    internal val json = Json {
         ignoreUnknownKeys = true
         coerceInputValues = true
         encodeDefaults = true
     }
 
-    private const val MEDIA_TYPE_JSON = "application/json; charset=utf-8"
+    internal const val MEDIA_TYPE_JSON = "application/json; charset=utf-8"
 
     /**
      * GET 请求
@@ -58,7 +58,7 @@ object HttpUtils {
         url: String,
         body: T
     ): String = withContext(Dispatchers.IO) {
-        val jsonStr = json.encodeToString(body)
+        val jsonStr = json.encodeToString(kotlinx.serialization.serializer<T>(), body)
         val request = Request.Builder()
             .url(url)
             .post(jsonStr.toRequestBody(MEDIA_TYPE_JSON.toMediaType()))
@@ -69,7 +69,7 @@ object HttpUtils {
     /**
      * 执行请求并转换异常
      */
-    private fun execute(client: OkHttpClient, request: Request): String {
+    internal fun execute(client: OkHttpClient, request: Request): String {
         try {
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {

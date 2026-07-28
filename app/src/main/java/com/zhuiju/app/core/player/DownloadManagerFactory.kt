@@ -7,6 +7,8 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.NoOpCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
+import androidx.media3.exoplayer.offline.DefaultDownloadIndex
+import androidx.media3.exoplayer.offline.DefaultDownloaderFactory
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadManager
 import com.zhuiju.app.config.AppConstants
@@ -60,7 +62,9 @@ object DownloadManagerFactory {
                 .setUpstreamDataSourceFactory(dataSourceFactory)
                 .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
 
-            val manager = DownloadManager(context, dbProvider, cacheDataSourceFactory)
+            val downloadIndex = DefaultDownloadIndex(dbProvider)
+            val downloaderFactory = DefaultDownloaderFactory(cacheDataSourceFactory)
+            val manager = DownloadManager(context, downloadIndex, downloaderFactory)
                 .apply {
                     maxParallelDownloads = 3
                     setMinRetryCount(1500)

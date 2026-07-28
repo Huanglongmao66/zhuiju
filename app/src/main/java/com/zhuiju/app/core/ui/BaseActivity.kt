@@ -108,21 +108,21 @@ abstract class BaseActivity<VB : ViewBinding> : AppCompatActivity() {
     /**
      * 显示加载框（子类可重写实现自定义 Loading）
      */
-    protected open fun showLoading(message: String) {
+    internal open fun showLoading(message: String) {
         // 默认空实现，后续阶段补充自定义 LoadingDialog
     }
 
     /**
      * 隐藏加载框
      */
-    protected open fun hideLoading() {
+    internal open fun hideLoading() {
         // 默认空实现
     }
 
     /**
      * 页面跳转（子类可重写实现 Navigation 路由）
      */
-    protected open fun navigateTo(event: CommonEvent.Navigate) {
+    internal open fun navigateTo(event: CommonEvent.Navigate) {
         LogUtils.i("navigateTo: ${event.route}", TAG)
     }
 

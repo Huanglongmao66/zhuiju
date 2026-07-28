@@ -101,7 +101,7 @@ class DanmakuManager(
             }
 
             override fun updateTimer(timer: DanmakuTimer) {
-                callback?.onTimerUpdate(timer.currMS)
+                callback?.onTimerUpdate(0L)
             }
 
             override fun danmakuShown(danmaku: BaseDanmaku?) {
