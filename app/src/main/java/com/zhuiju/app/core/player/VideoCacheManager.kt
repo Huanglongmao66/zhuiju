@@ -1,6 +1,7 @@
 package com.zhuiju.app.core.player
 
 import android.content.Context
+import android.net.Uri
 import androidx.media3.common.util.Util
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadManager
@@ -53,11 +54,9 @@ object VideoCacheManager {
      * @param url     视频 URL
      */
     fun addDownload(videoId: String, url: String) {
-        LogUtils.i("添加缓存任务: videoId=$videoId", TAG)
-        val request = DownloadRequest.Builder(videoId, android.net.Uri.parse(url)).build()
-        // TODO: 启动 DownloadService 执行下载（需在 Manifest 注册 DownloadService）
-        // DownloadService.sendAddDownload(ZhuiJuApp.instance, VideoDownloadService::class.java, request, false)
-        LogUtils.w("缓存下载待阶段三实现 DownloadService", TAG)
+        LogUtils.i("添加缓存任务: videoId=$videoId, url=$url", TAG)
+        val request = DownloadRequest.Builder(videoId, Uri.parse(url)).build()
+        DownloadService.sendAddDownload(ZhuiJuApp.instance, VideoDownloadService::class.java, request, false)
     }
 
     /**
@@ -65,7 +64,7 @@ object VideoCacheManager {
      */
     fun removeDownload(videoId: String) {
         LogUtils.i("移除缓存: videoId=$videoId", TAG)
-        // DownloadService.sendRemoveDownload(ZhuiJuApp.instance, VideoDownloadService::class.java, videoId, false)
+        DownloadService.sendRemoveDownload(ZhuiJuApp.instance, VideoDownloadService::class.java, videoId, false)
     }
 
     /**
@@ -73,15 +72,15 @@ object VideoCacheManager {
      */
     fun pauseDownload(videoId: String) {
         LogUtils.i("暂停缓存: videoId=$videoId", TAG)
-        // DownloadService.sendSetStopReason(ZhuiJuApp.instance, VideoDownloadService::class.java, videoId, "paused", false)
+        DownloadService.sendSetStopReason(ZhuiJuApp.instance, VideoDownloadService::class.java, videoId, "paused", false)
     }
 
     /**
      * 继续缓存（断点续传）
      */
     fun resumeDownload(videoId: String) {
-        LogUtils.i("继续缓存: videoId=$videoId", TAG)
-        // DownloadService.sendSetStopReason(ZhuiJuApp.instance, VideoDownloadService::class.java, videoId, null, false)
+        LogUtils.i("继续缓存（断点续传）: videoId=$videoId", TAG)
+        DownloadService.sendSetStopReason(ZhuiJuApp.instance, VideoDownloadService::class.java, videoId, null, false)
     }
 
     /**

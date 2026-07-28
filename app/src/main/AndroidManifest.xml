@@ -45,5 +45,16 @@
             </intent-filter>
         </activity>
 
+        <!-- 视频下载服务（分片缓存、断点续传） -->
+        <service
+            android:name=".core.player.VideoDownloadService"
+            android:foregroundServiceType="dataSync"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="androidx.media3.exoplayer.downloadService.action.RESTART" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
+
     </application>
 </manifest>
