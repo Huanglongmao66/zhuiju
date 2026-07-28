@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/page_bg">
+
+    <!-- 顶部 Banner 轮播 -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/banner"
+        android:layout_width="0dp"
+        android:layout_height="180dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 分类 Tab 栏 -->
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tab_category"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:tabMode="scrollable"
+        app:layout_constraintTop_toBottomOf="@id/banner"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 双列 Grid 视频列表 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:padding="@dimen/spacing_small"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toBottomOf="@id/tab_category"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
