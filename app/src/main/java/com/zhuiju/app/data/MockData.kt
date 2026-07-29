@@ -247,7 +247,7 @@ object MockData {
                 tags = listOf("热门", "推荐"),
                 playCount = (10_000L..200_000L).random(),
                 likeCount = (500..9999).random(),
-                rating = (7.0..9.5).random().toFloat()
+                rating = kotlin.random.Random.nextDouble(7.0, 9.5).toFloat()
             )
         }
 
@@ -264,7 +264,7 @@ object MockData {
                 category = categories[(i - 1) % categories.size].name,
                 playCount = baseHot * (count - i + 1).toLong(),
                 likeCount = (baseHot / 10).toInt() * (count - i + 1),
-                rating = (7.5..9.8).random().toFloat()
+                rating = kotlin.random.Random.nextDouble(7.5, 9.8).toFloat()
             )
             RankItem(
                 rank = i,
