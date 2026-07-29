@@ -109,12 +109,23 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>() {
      * - 通过 RecyclerView 找到对应 ViewHolder
      * - 将 ExoPlayer 绑定到其 TextureView
      * - 调用 [PlayerManager.play] 切换 MediaItem
+     *
+     * 注意：首次加载数据后 ViewHolder 可能尚未 attach，采用延迟重试机制
+     * （最多 8 次，每次 80ms，总计约 640ms）确保布局完成后绑定播放器。
      */
-    private fun playAt(position: Int) {
+    private fun playAt(position: Int, retryCount: Int = 0) {
         val pm = playerManager ?: return
-        val recyclerView = binding.viewPager.getChildAt(0) as? RecyclerView ?: return
-        val holder = adapter.findAttachedViewHolder(recyclerView, position) ?: run {
-            LogUtils.w("ViewHolder 未 attach，无法播放: $position", "HomeFragment")
+        val recyclerView = binding.viewPager.getChildAt(0) as? RecyclerView ?: run {
+            LogUtils.w("ViewPager2 RecyclerView 未就绪: $position", "HomeFragment")
+            return
+        }
+        val holder = adapter.findAttachedViewHolder(recyclerView, position)
+        if (holder == null) {
+            if (retryCount < MAX_PLAY_RETRY) {
+                binding.viewPager.postDelayed({ playAt(position, retryCount + 1) }, PLAY_RETRY_INTERVAL_MS)
+            } else {
+                LogUtils.w("ViewHolder 重试 $MAX_PLAY_RETRY 次仍失败: $position", "HomeFragment")
+            }
             return
         }
         val item = holder.boundItem ?: return
@@ -122,7 +133,12 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>() {
         // 将 ExoPlayer 绑定到当前页 TextureView（切换视频时重新绑定）
         pm.getPlayer().setVideoTextureView(holder.textureView)
         pm.play(item.videoUrl)
-        LogUtils.i("首页播放: pos=$position, url=${item.videoUrl}", "HomeFragment")
+        LogUtils.i("首页播放: pos=$position, retry=$retryCount, url=${item.videoUrl}", "HomeFragment")
+    }
+
+    companion object {
+        private const val MAX_PLAY_RETRY = 8
+        private const val PLAY_RETRY_INTERVAL_MS = 80L
     }
 
     override fun onPause() {
