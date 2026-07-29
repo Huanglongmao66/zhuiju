@@ -83,7 +83,21 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
         playerManager.bindLifecycle(this)
         // 将 ExoPlayer 绑定到 TextureView（ExoPlayer 支持 setVideoTextureView）
         val exoPlayer = playerManager.getPlayer()
-        exoPlayer.setVideoTextureView(binding.textureView)
+        // 小米/红米兼容：TextureView 的 SurfaceTexture 若未就绪，需在监听器中二次绑定
+        val textureView = binding.textureView
+        if (textureView.isAvailable) {
+            exoPlayer.setVideoTextureView(textureView)
+        } else {
+            textureView.surfaceTextureListener = object : android.view.TextureView.SurfaceTextureListener {
+                override fun onSurfaceTextureAvailable(surface: android.graphics.SurfaceTexture, width: Int, height: Int) {
+                    exoPlayer.setVideoTextureView(textureView)
+                    textureView.surfaceTextureListener = null
+                }
+                override fun onSurfaceTextureSizeChanged(surface: android.graphics.SurfaceTexture, width: Int, height: Int) {}
+                override fun onSurfaceTextureDestroyed(surface: android.graphics.SurfaceTexture): Boolean = true
+                override fun onSurfaceTextureUpdated(surface: android.graphics.SurfaceTexture) {}
+            }
+        }
     }
 
     private fun initDanmaku() {

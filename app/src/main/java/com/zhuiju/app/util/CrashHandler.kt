@@ -49,15 +49,18 @@ object CrashHandler {
     }
 
     /**
-     * 处理崩溃：主线程弹提示，子线程记录日志
+     * 处理崩溃：统一写日志，禁止主线程异常时再弹 Toast（避免二次崩溃）
+     *
+     * 注意：
+     * - 主线程未处理异常时，Looper 已经退出，弹 Toast/Handler.post 都可能再次崩
+     * - 红米/MIUI 对系统 Toast 队列有额外保护，异常时弹 Toast 极易触发二次崩溃
      */
     private fun handleCrash(context: Context, throwable: Throwable) {
-        if (Thread.currentThread() == Looper.getMainLooper().thread) {
-            // 主线程异常，弹吐司提示
-            Toast.makeText(context, "应用出现异常，正在恢复...", Toast.LENGTH_SHORT).show()
-        }
-        // 记录设备信息便于排查
-        LogUtils.e(buildCrashReport(throwable), CRASH_TAG)
+        // 仅记录日志与设备信息，绝不做 UI 操作
+        val report = buildCrashReport(throwable)
+        // 同时写到系统 Log（即使 LogUtils 关闭也要保证崩溃信息可见）
+        android.util.Log.e(CRASH_TAG, report)
+        LogUtils.e(report, CRASH_TAG)
     }
 
     /**

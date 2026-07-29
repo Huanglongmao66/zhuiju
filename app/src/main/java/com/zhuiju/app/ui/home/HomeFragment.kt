@@ -112,6 +112,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>() {
      *
      * 注意：首次加载数据后 ViewHolder 可能尚未 attach，采用延迟重试机制
      * （最多 8 次，每次 80ms，总计约 640ms）确保布局完成后绑定播放器。
+     * 小米/红米兼容：TextureView 的 SurfaceTexture 若未就绪，需在监听器中二次绑定。
      */
     private fun playAt(position: Int, retryCount: Int = 0) {
         val pm = playerManager ?: return
@@ -130,10 +131,26 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>() {
         }
         val item = holder.boundItem ?: return
 
-        // 将 ExoPlayer 绑定到当前页 TextureView（切换视频时重新绑定）
-        pm.getPlayer().setVideoTextureView(holder.textureView)
-        pm.play(item.videoUrl)
-        LogUtils.i("首页播放: pos=$position, retry=$retryCount, url=${item.videoUrl}", "HomeFragment")
+        val exoPlayer = pm.getPlayer()
+        val textureView = holder.textureView
+        // 小米/红米兼容：TextureView 未就绪时等 SurfaceTexture 可用后再绑定
+        if (textureView.isAvailable) {
+            exoPlayer.setVideoTextureView(textureView)
+            pm.play(item.videoUrl)
+            LogUtils.i("首页播放: pos=$position, retry=$retryCount, url=${item.videoUrl}", "HomeFragment")
+        } else {
+            textureView.surfaceTextureListener = object : android.view.TextureView.SurfaceTextureListener {
+                override fun onSurfaceTextureAvailable(surface: android.graphics.SurfaceTexture, w: Int, h: Int) {
+                    exoPlayer.setVideoTextureView(textureView)
+                    pm.play(item.videoUrl)
+                    LogUtils.i("首页播放(Surface就绪): pos=$position, url=${item.videoUrl}", "HomeFragment")
+                    textureView.surfaceTextureListener = null
+                }
+                override fun onSurfaceTextureSizeChanged(s: android.graphics.SurfaceTexture, w: Int, h: Int) {}
+                override fun onSurfaceTextureDestroyed(s: android.graphics.SurfaceTexture): Boolean = true
+                override fun onSurfaceTextureUpdated(s: android.graphics.SurfaceTexture) {}
+            }
+        }
     }
 
     companion object {
