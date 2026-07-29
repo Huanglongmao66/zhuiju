@@ -112,6 +112,28 @@ object MockData {
     private fun bannerImg(seed: Int) = "https://picsum.photos/seed/banner$seed/750/300"
     private fun avatar(seed: Int) = "https://i.pravatar.cc/150?img=$seed"
 
+    // ============== 构建辅助属性：必须在业务属性之前定义（object 按代码顺序初始化） ==============
+
+    private val videoUrls = listOf(URL_BIG_BUCK_BUNNY, URL_ELEPHANT_DREAM, URL_SINTEL, URL_Tears_OF_Steel)
+    private val titles = listOf(
+        "钢铁之泪" to "科幻动作短片，特效炸裂",
+        "大象之梦" to "奇幻冒险，开源动画先驱",
+        "辛特尔" to "龙女孩的寻剑之旅",
+        "大雄兔" to "搞笑动画，治愈日常",
+        "深海迷踪" to "悬疑惊悚，海底秘境",
+        "星空彼岸" to "浪漫爱情，跨越时空",
+        "古城秘闻" to "考古探险，历史悬案",
+        "极速追击" to "动作警匪，肾上腺素飙升"
+    )
+    private val mockCategories: List<Category> = listOf(
+        Category("c1", "电影", android.R.drawable.ic_menu_camera),
+        Category("c2", "电视剧", android.R.drawable.ic_menu_view),
+        Category("c3", "综艺", android.R.drawable.ic_menu_sort_by_size),
+        Category("c4", "动画", android.R.drawable.ic_menu_gallery),
+        Category("c5", "纪录片", android.R.drawable.ic_menu_my_calendar),
+        Category("c6", "短视频", android.R.drawable.ic_menu_send)
+    )
+
     /** 首页短视频 Feed */
     val shortVideos: List<ShortVideo> = listOf(
         ShortVideo("sv1", URL_BIG_BUCK_BUNNY, cover(1), "追剧小达人", avatar(1),
@@ -134,14 +156,7 @@ object MockData {
     )
 
     /** 发现页分类 */
-    val categories: List<Category> = listOf(
-        Category("c1", "电影", android.R.drawable.ic_menu_camera),
-        Category("c2", "电视剧", android.R.drawable.ic_menu_view),
-        Category("c3", "综艺", android.R.drawable.ic_menu_sort_by_size),
-        Category("c4", "动画", android.R.drawable.ic_menu_gallery),
-        Category("c5", "纪录片", android.R.drawable.ic_menu_my_calendar),
-        Category("c6", "短视频", android.R.drawable.ic_menu_send)
-    )
+    val categories: List<Category> = mockCategories
 
     /** 发现页推荐视频 */
     val discoverVideos: List<Video> = buildVideoList(8)
@@ -221,18 +236,6 @@ object MockData {
 
     // ==================== 构建辅助 ====================
 
-    private val videoUrls = listOf(URL_BIG_BUCK_BUNNY, URL_ELEPHANT_DREAM, URL_SINTEL, URL_Tears_OF_Steel)
-    private val titles = listOf(
-        "钢铁之泪" to "科幻动作短片，特效炸裂",
-        "大象之梦" to "奇幻冒险，开源动画先驱",
-        "辛特尔" to "龙女孩的寻剑之旅",
-        "大雄兔" to "搞笑动画，治愈日常",
-        "深海迷踪" to "悬疑惊悚，海底秘境",
-        "星空彼岸" to "浪漫爱情，跨越时空",
-        "古城秘闻" to "考古探险，历史悬案",
-        "极速追击" to "动作警匪，肾上腺素飙升"
-    )
-
     private fun buildVideoList(count: Int): List<Video> =
         (1..count).map { i ->
             val (title, desc) = titles[(i - 1) % titles.size]
@@ -243,7 +246,7 @@ object MockData {
                 videoUrl = videoUrls[(i - 1) % videoUrls.size],
                 durationMs = (45 * 60_000L + i * 60_000L),
                 description = desc,
-                category = categories[(i - 1) % categories.size].name,
+                category = mockCategories[(i - 1) % mockCategories.size].name,
                 tags = listOf("热门", "推荐"),
                 playCount = (10_000L..200_000L).random(),
                 likeCount = (500..9999).random(),
@@ -261,7 +264,7 @@ object MockData {
                 videoUrl = videoUrls[(i - 1) % videoUrls.size],
                 durationMs = 90 * 60_000L,
                 description = desc,
-                category = categories[(i - 1) % categories.size].name,
+                category = mockCategories[(i - 1) % mockCategories.size].name,
                 playCount = baseHot * (count - i + 1).toLong(),
                 likeCount = (baseHot / 10).toInt() * (count - i + 1),
                 rating = kotlin.random.Random.nextDouble(7.5, 9.8).toFloat()
