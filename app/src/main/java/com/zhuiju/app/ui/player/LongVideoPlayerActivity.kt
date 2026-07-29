@@ -1,7 +1,12 @@
 package com.zhuiju.app.ui.player
 
+import android.content.pm.ActivityInfo
 import android.os.Bundle
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.view.View
+import android.widget.PopupMenu
+import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.zhuiju.app.config.AppConstants
@@ -15,6 +20,7 @@ import com.zhuiju.app.core.player.ProgressInfo
 import com.zhuiju.app.data.MockData
 import com.zhuiju.app.databinding.ActivityLongVideoPlayerBinding
 import com.zhuiju.app.util.LogUtils
+import com.zhuiju.app.util.ToastUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -37,9 +43,17 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
     private lateinit var playerManager: PlayerManager
     private lateinit var danmakuManager: DanmakuManager
     private lateinit var gestureController: GestureController
+    private lateinit var gestureDetector: GestureDetector
 
     private var controlBarHideJob: kotlinx.coroutines.Job? = null
+    private var gestureOverlayHideJob: kotlinx.coroutines.Job? = null
     private var isControlBarVisible = true
+
+    /** 当前倍速（点击倍速按钮切换） */
+    private var currentSpeed = AppConstants.PLAYBACK_SPEED_DEFAULT
+
+    /** 是否处于长按倍速状态（松手恢复） */
+    private var isLongPressSpeeding = false
 
     /** 当前视频ID */
     private val videoId: String by lazy {
@@ -118,6 +132,23 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
 
     private fun initGesture() {
         gestureController = GestureController(this, playerManager, this)
+        gestureDetector = GestureDetector(this, gestureController)
+        // 绑定到根 View：返回 false 不拦截事件，按钮仍可正常点击；
+        // 非按钮区域（TextureView/DanmakuView 不消费 touch）的手势由 GestureDetector 识别
+        binding.root.setOnTouchListener { _, event ->
+            gestureController.onTouchEventStart(event)
+            gestureDetector.onTouchEvent(event)
+            if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
+                gestureController.onTouchEventEnd()
+                // 长按倍速松手后恢复原倍速
+                if (isLongPressSpeeding) {
+                    isLongPressSpeeding = false
+                    playerManager.setPlaybackSpeed(currentSpeed)
+                    hideGestureOverlay()
+                }
+            }
+            false
+        }
     }
 
     private fun initControlBar() {
@@ -131,7 +162,66 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
         binding.btnDanmaku.setOnClickListener {
             if (danmakuManager.isVisible.value) danmakuManager.hide() else danmakuManager.show()
         }
+
+        // SeekBar 拖动跳转
+        binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    binding.tvTime.text = "${formatTime(progress.toLong())}/${formatTime(seekBar?.max?.toLong() ?: 0)}"
+                }
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                controlBarHideJob?.cancel()
+            }
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                val pos = seekBar?.progress?.toLong() ?: return
+                playerManager.seekTo(pos)
+                danmakuManager.seekTo(pos)
+                scheduleHideControlBar()
+            }
+        })
+
+        // 倍速按钮：弹出选择菜单
+        binding.btnSpeed.setOnClickListener {
+            showSpeedMenu()
+        }
+
+        // 全屏按钮：切换横竖屏
+        binding.btnFullscreen.setOnClickListener {
+            toggleOrientation()
+        }
         // 点击切换控制栏显隐在 GestureCallback 中处理
+    }
+
+    /**
+     * 倍速选择菜单
+     */
+    private fun showSpeedMenu() {
+        val popup = PopupMenu(this, binding.btnSpeed)
+        AppConstants.PLAYBACK_SPEEDS.forEachIndexed { index, speed ->
+            val label = if (speed == 1.0f) "1.0x（正常）" else "${speed}x"
+            popup.menu.add(0, index, 0, label)
+        }
+        popup.setOnMenuItemClickListener { item ->
+            val speed = AppConstants.PLAYBACK_SPEEDS.getOrNull(item.itemId) ?: return@setOnMenuItemClickListener false
+            currentSpeed = speed
+            playerManager.setPlaybackSpeed(speed)
+            ToastUtils.show("倍速 ${speed}x")
+            true
+        }
+        popup.show()
+    }
+
+    /**
+     * 切换横竖屏
+     */
+    private fun toggleOrientation() {
+        val newOrientation = if (resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        }
+        requestedOrientation = newOrientation
     }
 
     private fun collectPlayerState() {
@@ -203,6 +293,24 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
         binding.statusOverlay.visibility = View.GONE
     }
 
+    /**
+     * 显示手势提示浮窗，800ms 后自动隐藏
+     */
+    private fun showGestureHint(text: String) {
+        binding.tvGestureHint.text = text
+        binding.gestureOverlay.visibility = View.VISIBLE
+        gestureOverlayHideJob?.cancel()
+        gestureOverlayHideJob = lifecycleScope.launch {
+            delay(800)
+            hideGestureOverlay()
+        }
+    }
+
+    private fun hideGestureOverlay() {
+        gestureOverlayHideJob?.cancel()
+        binding.gestureOverlay.visibility = View.GONE
+    }
+
     private fun scheduleHideControlBar() {
         controlBarHideJob?.cancel()
         controlBarHideJob = lifecycleScope.launch {
@@ -240,26 +348,37 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
     }
 
     override fun onDoubleTap(x: Float, y: Float) {
-        // 长视频双击可点赞或快进/后退
+        // 双击左半屏后退 10s，右半屏快进 10s
+        val current = playerManager.progress.value.current
+        val total = playerManager.progress.value.total
+        val target = if (x < binding.root.width / 2) {
+            (current - 10_000).coerceAtLeast(0)
+        } else {
+            (current + 10_000).coerceAtMost(total)
+        }
+        playerManager.seekTo(target)
+        danmakuManager.seekTo(target)
+        showGestureHint(formatTime(target))
     }
 
     override fun onLongPress() {
-        // 长按倍速
+        // 长按 2x 倍速播放，松手恢复
+        if (isLongPressSpeeding) return
+        isLongPressSpeeding = true
+        playerManager.setPlaybackSpeed(2.0f)
+        showGestureHint("2.0x 倍速播放")
     }
 
     override fun onBrightnessChange(brightness: Float) {
-        binding.gestureOverlay.visibility = View.VISIBLE
-        binding.tvGestureHint.text = "亮度 ${(brightness * 100).toInt()}%"
+        showGestureHint("亮度 ${(brightness * 100).toInt()}%")
     }
 
     override fun onVolumeChange(current: Int, max: Int) {
-        binding.gestureOverlay.visibility = View.VISIBLE
-        binding.tvGestureHint.text = "音量 $current/$max"
+        showGestureHint("音量 $current/$max")
     }
 
     override fun onSeekPreview(positionMs: Long, totalMs: Long) {
-        binding.gestureOverlay.visibility = View.VISIBLE
-        binding.tvGestureHint.text = formatTime(positionMs)
+        showGestureHint(formatTime(positionMs))
     }
 
     override fun onSeekComplete(positionMs: Long) {
