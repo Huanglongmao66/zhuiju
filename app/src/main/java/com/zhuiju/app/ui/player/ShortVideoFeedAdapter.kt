@@ -5,6 +5,8 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.zhuiju.app.data.ShortVideo
 import com.zhuiju.app.databinding.ItemShortVideoBinding
 
 /**
@@ -15,7 +17,7 @@ import com.zhuiju.app.databinding.ItemShortVideoBinding
  * - 极简布局，保证 60 帧滑动
  */
 class ShortVideoFeedAdapter :
-    ListAdapter<ShortVideoItem, ShortVideoFeedAdapter.ViewHolder>(DIFF_CALLBACK) {
+    ListAdapter<ShortVideo, ShortVideoFeedAdapter.ViewHolder>(DIFF_CALLBACK) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemShortVideoBinding.inflate(
@@ -31,39 +33,26 @@ class ShortVideoFeedAdapter :
     class ViewHolder(private val binding: ItemShortVideoBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(item: ShortVideoItem) {
+        fun bind(item: ShortVideo) {
             binding.tvAuthor.text = "@${item.author}"
             binding.tvDesc.text = item.description
-            // TODO: 加载头像、设置点赞状态
-            // 视频播放由 Fragment/Activity 根据 ViewPager2 页面切换回调统一管理
+            // 加载头像
+            Glide.with(binding.ivAvatar)
+                .load(item.avatarUrl)
+                .circleCrop()
+                .into(binding.ivAvatar)
         }
     }
 
     companion object {
-        private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<ShortVideoItem>() {
-            override fun areItemsTheSame(oldItem: ShortVideoItem, newItem: ShortVideoItem): Boolean {
+        private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<ShortVideo>() {
+            override fun areItemsTheSame(oldItem: ShortVideo, newItem: ShortVideo): Boolean {
                 return oldItem.id == newItem.id
             }
 
-            override fun areContentsTheSame(oldItem: ShortVideoItem, newItem: ShortVideoItem): Boolean {
+            override fun areContentsTheSame(oldItem: ShortVideo, newItem: ShortVideo): Boolean {
                 return oldItem == newItem
             }
         }
     }
 }
-
-/**
- * 短视频数据模型
- */
-data class ShortVideoItem(
-    val id: String,
-    val videoUrl: String,
-    val coverUrl: String,
-    val author: String,
-    val avatarUrl: String,
-    val description: String,
-    val likeCount: Int = 0,
-    val commentCount: Int = 0,
-    val shareCount: Int = 0,
-    val isLiked: Boolean = false
-)

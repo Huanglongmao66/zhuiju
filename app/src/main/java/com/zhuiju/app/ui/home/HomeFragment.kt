@@ -1,20 +1,18 @@
 package com.zhuiju.app.ui.home
 
-import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.RecyclerView
-import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
-import com.zhuiju.app.R
 import com.zhuiju.app.config.AppConstants
 import com.zhuiju.app.core.ui.BaseFragment
 import com.zhuiju.app.databinding.FragmentHomeBinding
 import com.zhuiju.app.ui.player.ShortVideoFeedAdapter
-import com.zhuiju.app.ui.player.ShortVideoItem
+import kotlinx.coroutines.launch
 
 /**
  * 首页 Fragment —— 抖音式竖屏短视频 Feed 流
@@ -26,6 +24,7 @@ import com.zhuiju.app.ui.player.ShortVideoItem
  */
 class HomeFragment : BaseFragment<FragmentHomeBinding>() {
 
+    private val viewModel: HomeViewModel by activityViewModels()
     private lateinit var adapter: ShortVideoFeedAdapter
 
     override fun inflateBinding(inflater: LayoutInflater, container: ViewGroup?): FragmentHomeBinding {
@@ -50,20 +49,16 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>() {
 
     override fun onLazyInit() {
         // 首次可见时加载视频列表
-        loadVideoList()
+        viewModel.loadShortVideos()
     }
 
     override fun collectState() {
-        // 收集 ViewModel 状态（后续接入 HomeViewModel）
-    }
-
-    private fun loadVideoList() {
-        // TODO: 从 Repository 加载短视频列表
-        val mockData = listOf(
-            ShortVideoItem("1", "", "", "用户A", "", "这是第一条短视频"),
-            ShortVideoItem("2", "", "", "用户B", "", "这是第二条短视频"),
-            ShortVideoItem("3", "", "", "用户C", "", "这是第三条短视频")
-        )
-        adapter.submitList(mockData)
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.videos.collect { list ->
+                    adapter.submitList(list)
+                }
+            }
+        }
     }
 }

@@ -1,19 +1,20 @@
 package com.zhuiju.app.ui.player
 
 import android.os.Bundle
-import android.view.TextureView
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.zhuiju.app.R
 import com.zhuiju.app.config.AppConstants
+import com.zhuiju.app.core.danmaku.DanmakuBuilder
 import com.zhuiju.app.core.danmaku.DanmakuManager
 import com.zhuiju.app.core.danmaku.DanmakuSyncController
+import com.zhuiju.app.core.danmaku.DanmakuData
 import com.zhuiju.app.core.player.GestureController
 import com.zhuiju.app.core.player.PlaybackState
 import com.zhuiju.app.core.player.PlayerManager
 import com.zhuiju.app.core.player.PowerManager
 import com.zhuiju.app.core.player.ProgressInfo
+import com.zhuiju.app.data.MockData
 import com.zhuiju.app.databinding.ActivityLongVideoPlayerBinding
 import com.zhuiju.app.util.LogUtils
 import kotlinx.coroutines.delay
@@ -26,6 +27,11 @@ import kotlinx.coroutines.launch
  * - 控制栏自动隐藏（3 秒无操作），动画 250ms
  * - 横竖屏适配，全屏切换
  * - 状态遮罩：加载中、错误、重试
+ *
+ * Intent 参数：
+ * - [EXTRA_VIDEO_ID]    视频ID（用于播放历史）
+ * - [EXTRA_VIDEO_URL]   视频URL（为空时使用 MockData.longVideoDetail）
+ * - [EXTRA_VIDEO_TITLE] 视频标题
  */
 class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCallback {
 
@@ -38,13 +44,27 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
     private var controlBarHideJob: kotlinx.coroutines.Job? = null
     private var isControlBarVisible = true
 
-    private val testVideoUrl = "https://test.zhuiju.app/sample.mp4"
-    private val testVideoId = "test_001"
+    /** 当前视频ID */
+    private val videoId: String by lazy {
+        intent.getStringExtra(EXTRA_VIDEO_ID) ?: "test_001"
+    }
+
+    /** 当前视频URL（默认使用 MockData 中的真实可播放视频） */
+    private val videoUrl: String by lazy {
+        intent.getStringExtra(EXTRA_VIDEO_URL) ?: MockData.longVideoDetail.videoUrl
+    }
+
+    /** 当前视频标题 */
+    private val videoTitle: String by lazy {
+        intent.getStringExtra(EXTRA_VIDEO_TITLE) ?: MockData.longVideoDetail.title
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityLongVideoPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        binding.tvTitle.text = videoTitle
 
         initPlayer()
         initDanmaku()
@@ -55,9 +75,10 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
         // 播放期间屏幕常亮
         PowerManager.acquireScreenOn()
 
-        // 开始播放
-        val savedPosition = com.zhuiju.app.core.player.PlayHistoryManager.getPosition(testVideoId)
-        playerManager.play(testVideoUrl, savedPosition)
+        // 开始播放（使用续播位置）
+        val savedPosition = com.zhuiju.app.core.player.PlayHistoryManager.getPosition(videoId)
+        playerManager.play(videoUrl, savedPosition)
+        LogUtils.i("开始播放: id=$videoId, url=$videoUrl, savedPos=$savedPosition", "LongVideoPlayer")
     }
 
     private fun initPlayer() {
@@ -69,7 +90,19 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
 
     private fun initDanmaku() {
         danmakuManager = DanmakuManager(binding.danmakuView)
-        // TODO: 从网络加载弹幕数据后调用 danmakuManager.init(danmakus)
+        // 加载 Mock 弹幕数据
+        val danmakuDataList = MockData.longVideoDanmakus.map { info ->
+            DanmakuData(
+                text = info.text,
+                timeMs = info.timeMs,
+                color = info.color,
+                type = info.type
+            )
+        }
+        val danmakus = DanmakuBuilder.buildDanmakus(danmakuDataList)
+        danmakuManager.init(danmakus)
+        danmakuManager.start()
+
         danmakuSyncController = DanmakuSyncController(danmakuManager)
         danmakuSyncController.bindPlayer(
             positionProvider = { playerManager.progress.value.current },
@@ -77,6 +110,7 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
             isPlayingProvider = { playerManager.isPlaying.value }
         )
         danmakuSyncController.start()
+        LogUtils.i("弹幕加载完成: ${danmakuDataList.size} 条", "LongVideoPlayer")
     }
 
     private fun initGesture() {
@@ -89,7 +123,10 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
         }
         binding.btnBack.setOnClickListener { finish() }
         binding.btnRetry.setOnClickListener {
-            playerManager.play(testVideoUrl)
+            playerManager.play(videoUrl)
+        }
+        binding.btnDanmaku.setOnClickListener {
+            if (danmakuManager.isVisible.value) danmakuManager.hide() else danmakuManager.show()
         }
         // 点击切换控制栏显隐在 GestureCallback 中处理
     }
@@ -103,10 +140,14 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
                         hideStatusOverlay()
                         updatePlayPauseButton(true)
                         scheduleHideControlBar()
+                        // 播放时启动弹幕
+                        danmakuManager.resume()
                     }
                     PlaybackState.Paused -> {
                         updatePlayPauseButton(false)
                         showControlBar()
+                        // 暂停时暂停弹幕
+                        danmakuManager.pause()
                     }
                     else -> {}
                 }
@@ -220,17 +261,26 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
 
     override fun onSeekComplete(positionMs: Long) {
         binding.gestureOverlay.visibility = View.GONE
+        // 拖拽后同步弹幕时间轴
+        danmakuManager.seekTo(positionMs)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         // 保存播放位置
         playerManager.progress.value.let { progress ->
-            com.zhuiju.app.core.player.PlayHistoryManager.savePosition(testVideoId, progress.current, progress.total)
+            com.zhuiju.app.core.player.PlayHistoryManager.savePosition(videoId, progress.current, progress.total)
         }
         danmakuSyncController.release()
+        danmakuManager.release()
         // 释放屏幕常亮
         PowerManager.releaseScreenOn()
         LogUtils.i("LongVideoPlayerActivity onDestroy", "LongVideoPlayer")
+    }
+
+    companion object {
+        const val EXTRA_VIDEO_ID = "extra_video_id"
+        const val EXTRA_VIDEO_URL = "extra_video_url"
+        const val EXTRA_VIDEO_TITLE = "extra_video_title"
     }
 }

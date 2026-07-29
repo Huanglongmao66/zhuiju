@@ -136,10 +136,12 @@
             app:tabMode="fixed"
             app:tabGravity="fill" />
 
-        <androidx.viewpager2.widget.ViewPager2
-            android:id="@+id/vp_works"
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_works"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:padding="@dimen/spacing_small"
+            android:clipToPadding="false" />
     </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

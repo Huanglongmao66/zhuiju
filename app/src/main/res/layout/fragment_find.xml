@@ -22,10 +22,25 @@
         android:maxLines="1"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btn_clear_search" />
+
+    <!-- 清空搜索按钮 -->
+    <ImageButton
+        android:id="@+id/btn_clear_search"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="@dimen/spacing_medium"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@android:drawable/ic_menu_close_clear_cancel"
+        android:contentDescription="清空"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@id/et_search"
+        app:layout_constraintBottom_toBottomOf="@id/et_search"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- 内容区：ScrollView 承载多分区（禁止 RecyclerView 嵌套） -->
+    <!-- 浏览状态内容 -->
     <ScrollView
+        android:id="@+id/scroll_browse"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
@@ -72,12 +87,13 @@
                 android:layout_marginTop="@dimen/spacing_small"
                 android:nestedScrollingEnabled="false" />
 
-            <!-- 分区1 -->
+            <!-- 分区1：热门推荐 -->
             <TextView
                 android:id="@+id/tv_section1_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_large"
+                android:text="热门推荐"
                 android:textColor="@color/text_primary"
                 android:textSize="@dimen/text_size_body"
                 android:textStyle="bold" />
@@ -91,5 +107,18 @@
 
         </LinearLayout>
     </ScrollView>
+
+    <!-- 搜索状态：搜索结果列表 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_search_result"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:padding="@dimen/spacing_small"
+        android:clipToPadding="false"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/et_search"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

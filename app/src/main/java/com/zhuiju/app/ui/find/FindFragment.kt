@@ -1,10 +1,23 @@
 package com.zhuiju.app.ui.find
 
+import android.content.Intent
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.chip.Chip
 import com.zhuiju.app.core.ui.BaseFragment
+import com.zhuiju.app.data.Video
 import com.zhuiju.app.databinding.FragmentFindBinding
-import com.zhuiju.app.util.LogUtils
+import com.zhuiju.app.ui.discover.DiscoverAdapter
+import com.zhuiju.app.ui.player.LongVideoPlayerActivity
+import kotlinx.coroutines.launch
 
 /**
  * 找片 Fragment —— 搜索 + 分类
@@ -17,31 +30,123 @@ import com.zhuiju.app.util.LogUtils
  */
 class FindFragment : BaseFragment<FragmentFindBinding>() {
 
+    private val viewModel: FindViewModel by activityViewModels()
+    private lateinit var categoryAdapter: FindCategoryAdapter
+    private lateinit var sectionAdapter: DiscoverAdapter
+    private lateinit var searchResultAdapter: DiscoverAdapter
+
     override fun inflateBinding(inflater: LayoutInflater, container: ViewGroup?): FragmentFindBinding {
         return FragmentFindBinding.inflate(inflater, container, false)
     }
 
     override fun initViews() {
-        binding.etSearch.setOnEditorActionListener { v, _, _ ->
-            val keyword = v.text.toString().trim()
-            if (keyword.isNotEmpty()) {
-                search(keyword)
+        // 搜索框
+        binding.etSearch.setOnEditorActionListener { v, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                val keyword = v.text.toString().trim()
+                if (keyword.isNotEmpty()) {
+                    viewModel.search(keyword)
+                    binding.btnClearSearch.visibility = View.VISIBLE
+                }
+                true
+            } else {
+                false
             }
-            true
+        }
+
+        // 清空搜索
+        binding.btnClearSearch.setOnClickListener {
+            binding.etSearch.text.clear()
+            viewModel.clearSearch()
+            it.visibility = View.GONE
+        }
+
+        // 分类列表（横向）
+        categoryAdapter = FindCategoryAdapter { category ->
+            // 点击分类直接搜索该分类名称
+            binding.etSearch.setText(category.name)
+            viewModel.search(category.name)
+            binding.btnClearSearch.visibility = View.VISIBLE
+        }
+        binding.rvCategory.apply {
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            adapter = categoryAdapter
+        }
+
+        // 分区1（推荐视频，双列）
+        sectionAdapter = DiscoverAdapter { video -> navigateToPlayer(video) }
+        binding.rvSection1.apply {
+            layoutManager = GridLayoutManager(requireContext(), 3)
+            adapter = sectionAdapter
+        }
+
+        // 搜索结果列表（双列）
+        searchResultAdapter = DiscoverAdapter { video -> navigateToPlayer(video) }
+        binding.rvSearchResult.apply {
+            layoutManager = GridLayoutManager(requireContext(), 2)
+            adapter = searchResultAdapter
         }
     }
 
     override fun initData() {}
 
     override fun onLazyInit() {
-        LogUtils.i("FindFragment 懒加载", "Find")
-        // TODO: 加载热门搜索、分类、分区数据
+        viewModel.loadData()
     }
 
-    override fun collectState() {}
+    override fun collectState() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.hotSearchWords.collect { words ->
+                        binding.chipHotSearch.removeAllViews()
+                        words.forEach { word ->
+                            val chip = Chip(requireContext()).apply {
+                                text = word
+                                isCheckable = false
+                                isClickable = true
+                                setOnClickListener {
+                                    binding.etSearch.setText(word)
+                                    viewModel.search(word)
+                                    binding.btnClearSearch.visibility = View.VISIBLE
+                                }
+                            }
+                            binding.chipHotSearch.addView(chip)
+                        }
+                    }
+                }
+                launch {
+                    viewModel.categories.collect { categories ->
+                        categoryAdapter.submitList(categories)
+                    }
+                }
+                launch {
+                    viewModel.sectionVideos.collect { videos ->
+                        sectionAdapter.submitList(videos)
+                    }
+                }
+                launch {
+                    viewModel.isSearching.collect { isSearching ->
+                        binding.scrollBrowse.visibility = if (isSearching) View.GONE else View.VISIBLE
+                        binding.rvSearchResult.visibility = if (isSearching) View.VISIBLE else View.GONE
+                    }
+                }
+                launch {
+                    viewModel.searchResults.collect { results ->
+                        searchResultAdapter.submitList(results)
+                    }
+                }
+            }
+        }
+    }
 
-    private fun search(keyword: String) {
-        LogUtils.i("搜索: $keyword", "Find")
-        // TODO: 调用 Repository 搜索，切换 UI 到搜索结果状态
+    private fun navigateToPlayer(video: Video) {
+        startActivity(
+            Intent(requireContext(), LongVideoPlayerActivity::class.java).apply {
+                putExtra(LongVideoPlayerActivity.EXTRA_VIDEO_ID, video.id)
+                putExtra(LongVideoPlayerActivity.EXTRA_VIDEO_URL, video.videoUrl)
+                putExtra(LongVideoPlayerActivity.EXTRA_VIDEO_TITLE, video.title)
+            }
+        )
     }
 }

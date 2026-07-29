@@ -45,6 +45,14 @@
             </intent-filter>
         </activity>
 
+        <!-- 长视频播放页 -->
+        <activity
+            android:name=".ui.player.LongVideoPlayerActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.ZhuiJu" />
+
         <!-- 视频下载服务（分片缓存、断点续传） -->
         <service
             android:name=".core.player.VideoDownloadService"
