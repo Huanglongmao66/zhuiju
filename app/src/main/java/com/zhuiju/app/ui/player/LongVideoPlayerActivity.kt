@@ -5,9 +5,7 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.zhuiju.app.config.AppConstants
-import com.zhuiju.app.core.danmaku.DanmakuBuilder
 import com.zhuiju.app.core.danmaku.DanmakuManager
-import com.zhuiju.app.core.danmaku.DanmakuSyncController
 import com.zhuiju.app.core.danmaku.DanmakuData
 import com.zhuiju.app.core.player.GestureController
 import com.zhuiju.app.core.player.PlaybackState
@@ -38,7 +36,6 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
     private lateinit var binding: ActivityLongVideoPlayerBinding
     private lateinit var playerManager: PlayerManager
     private lateinit var danmakuManager: DanmakuManager
-    private lateinit var danmakuSyncController: DanmakuSyncController
     private lateinit var gestureController: GestureController
 
     private var controlBarHideJob: kotlinx.coroutines.Job? = null
@@ -84,13 +81,14 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
     private fun initPlayer() {
         playerManager = PlayerManager.getInstance()
         playerManager.bindLifecycle(this)
-        // 绑定 TextureView（ExoPlayer 1.2.1 使用 PlayerView，这里用 TextureView 自定义）
-        // 实际可替换为 androidx.media3.ui.PlayerView
+        // 将 ExoPlayer 绑定到 TextureView（ExoPlayer 支持 setVideoTextureView）
+        val exoPlayer = playerManager.getPlayer()
+        exoPlayer.setVideoTextureView(binding.textureView)
     }
 
     private fun initDanmaku() {
         danmakuManager = DanmakuManager(binding.danmakuView)
-        // 加载 Mock 弹幕数据
+        // 加载 Mock 弹幕数据（init 内部会在 factory 就绪后构建并注入）
         val danmakuDataList = MockData.longVideoDanmakus.map { info ->
             DanmakuData(
                 text = info.text,
@@ -99,18 +97,9 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
                 type = info.type
             )
         }
-        val danmakus = DanmakuBuilder.buildDanmakus(danmakuDataList)
-        danmakuManager.init(danmakus)
+        danmakuManager.init(danmakuDataList)
         danmakuManager.start()
-
-        danmakuSyncController = DanmakuSyncController(danmakuManager)
-        danmakuSyncController.bindPlayer(
-            positionProvider = { playerManager.progress.value.current },
-            speedProvider = { playerManager.playbackState.value.let { 1.0f } },  // TODO: 获取实际倍速
-            isPlayingProvider = { playerManager.isPlaying.value }
-        )
-        danmakuSyncController.start()
-        LogUtils.i("弹幕加载完成: ${danmakuDataList.size} 条", "LongVideoPlayer")
+        LogUtils.i("弹幕初始化: ${danmakuDataList.size} 条数据", "LongVideoPlayer")
     }
 
     private fun initGesture() {
@@ -271,7 +260,6 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
         playerManager.progress.value.let { progress ->
             com.zhuiju.app.core.player.PlayHistoryManager.savePosition(videoId, progress.current, progress.total)
         }
-        danmakuSyncController.release()
         danmakuManager.release()
         // 释放屏幕常亮
         PowerManager.releaseScreenOn()

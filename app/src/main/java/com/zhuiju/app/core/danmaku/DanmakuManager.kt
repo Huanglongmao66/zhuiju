@@ -85,19 +85,26 @@ class DanmakuManager(
     }
 
     /**
-     * 初始化弹幕
+     * 初始化弹幕（接收原始数据列表，内部构建）
      *
-     * @param danmakus 弹幕数据集合
+     * 流程：prepare(空 parser) → factory 就绪 → 构建弹幕 → 重新 prepare
+     *
+     * @param dataList 弹幕原始数据列表
      */
-    fun init(danmakus: Danmakus) {
-        val parser = object : BaseDanmakuParser() {
-            override fun parse(): Danmakus = danmakus
+    fun init(dataList: List<DanmakuData>) {
+        // 第一步：先用空 parser prepare，让 DanmakuContext 的 factory 就绪
+        val emptyParser = object : BaseDanmakuParser() {
+            override fun parse(): Danmakus = Danmakus()
         }
 
         danmakuView.setCallback(object : DrawHandler.Callback {
             override fun prepared() {
                 _isReady.value = true
                 LogUtils.i("弹幕准备完成", TAG)
+                // 第二步：factory 就绪后构建弹幕并注入
+                if (dataList.isNotEmpty()) {
+                    injectDanmakus(dataList)
+                }
             }
 
             override fun updateTimer(timer: DanmakuTimer) {
@@ -113,9 +120,28 @@ class DanmakuManager(
             }
         })
 
-        danmakuView.prepare(parser, context)
+        danmakuView.prepare(emptyParser, context)
         danmakuView.showFPS(false)
         danmakuView.enableDanmakuDrawingCache(true)
+    }
+
+    /**
+     * 构建弹幕数据并注入到 DanmakuView（在 prepare 之后调用）
+     */
+    private fun injectDanmakus(dataList: List<DanmakuData>) {
+        var successCount = 0
+        dataList.forEach { data ->
+            val danmaku = when (data.type) {
+                DanmakuData.TYPE_TOP -> DanmakuBuilder.buildTopDanmaku(context, data.text, data.timeMs, data.color, data.textSize)
+                DanmakuData.TYPE_BOTTOM -> DanmakuBuilder.buildBottomDanmaku(context, data.text, data.timeMs, data.color, data.textSize)
+                else -> DanmakuBuilder.buildScrollDanmaku(context, data.text, data.timeMs, data.color, data.textSize)
+            }
+            if (danmaku != null) {
+                danmakuView.addDanmaku(danmaku)
+                successCount++
+            }
+        }
+        LogUtils.i("弹幕注入完成: $successCount/${dataList.size} 条", TAG)
     }
 
     /**
