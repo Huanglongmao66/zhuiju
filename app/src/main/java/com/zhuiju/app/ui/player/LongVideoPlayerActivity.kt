@@ -18,6 +18,8 @@ import com.zhuiju.app.core.player.PlayerManager
 import com.zhuiju.app.core.player.PowerManager
 import com.zhuiju.app.core.player.ProgressInfo
 import com.zhuiju.app.data.MockData
+import com.zhuiju.app.data.api.Q360Api
+import com.zhuiju.app.data.api.VideoDetail
 import com.zhuiju.app.databinding.ActivityLongVideoPlayerBinding
 import com.zhuiju.app.util.LogUtils
 import com.zhuiju.app.util.ToastUtils
@@ -60,15 +62,30 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
         intent.getStringExtra(EXTRA_VIDEO_ID) ?: "test_001"
     }
 
-    /** 当前视频URL（默认使用 MockData 中的真实可播放视频） */
-    private val videoUrl: String by lazy {
-        intent.getStringExtra(EXTRA_VIDEO_URL) ?: MockData.longVideoDetail.videoUrl
+    /**
+     * 从 videoId 中拆分出360影视的分类ID
+     * videoId 格式: "{catId}_{entId}"，如 "2_abc123"
+     */
+    private val q360CatId: String? by lazy {
+        val parts = videoId.split("_", limit = 2)
+        if (parts.size == 2) parts[0] else null
     }
+
+    private val q360EntId: String? by lazy {
+        val parts = videoId.split("_", limit = 2)
+        if (parts.size == 2) parts[1] else null
+    }
+
+    /** 当前视频URL（为空时从360影视API获取） */
+    private var videoUrl: String = ""
 
     /** 当前视频标题 */
     private val videoTitle: String by lazy {
-        intent.getStringExtra(EXTRA_VIDEO_TITLE) ?: MockData.longVideoDetail.title
+        intent.getStringExtra(EXTRA_VIDEO_TITLE) ?: ""
     }
+
+    /** 视频详情（从360影视API获取） */
+    private var videoDetail: VideoDetail? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -86,10 +103,52 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
         // 播放期间屏幕常亮
         PowerManager.acquireScreenOn()
 
-        // 开始播放（使用续播位置）
-        val savedPosition = com.zhuiju.app.core.player.PlayHistoryManager.getPosition(videoId)
-        playerManager.play(videoUrl, savedPosition)
-        LogUtils.i("开始播放: id=$videoId, url=$videoUrl, savedPos=$savedPosition", "LongVideoPlayer")
+        // 异步获取视频详情和播放地址
+        loadVideoDetail()
+    }
+
+    /**
+     * 从360影视API获取视频详情和播放地址
+     *
+     * videoId 格式: "{catId}_{entId}"
+     * - 有 catId/entId 时走360影视详情接口
+     * - 否则回退到 Intent 传入的 videoUrl 或 MockData
+     */
+    private fun loadVideoDetail() {
+        val cat = q360CatId
+        val entId = q360EntId
+
+        if (cat != null && entId != null) {
+            // 从360影视API获取详情
+            showLoading()
+            lifecycleScope.launch {
+                val detail = Q360Api.getDetail(cat, entId)
+                if (detail != null && detail.playSources.isNotEmpty()) {
+                    videoDetail = detail
+                    // 更新标题
+                    binding.tvTitle.text = detail.title
+                    // 取第一个播放源的第一集地址
+                    videoUrl = detail.playSources.first().episodes.first().url
+                    LogUtils.i("获取播放地址成功: ${detail.title}, 源=${detail.playSources.first().siteName}, url=$videoUrl", "LongVideoPlayer")
+                    // 开始播放
+                    val savedPosition = com.zhuiju.app.core.player.PlayHistoryManager.getPosition(videoId)
+                    playerManager.play(videoUrl, savedPosition)
+                } else {
+                    // 详情获取失败或无播放源，尝试用 Intent 传入的 URL
+                    val fallbackUrl = intent.getStringExtra(EXTRA_VIDEO_URL) ?: MockData.longVideoDetail.videoUrl
+                    videoUrl = fallbackUrl
+                    LogUtils.w("360详情无播放源，回退到Intent URL: $videoUrl", "LongVideoPlayer")
+                    val savedPosition = com.zhuiju.app.core.player.PlayHistoryManager.getPosition(videoId)
+                    playerManager.play(videoUrl, savedPosition)
+                }
+            }
+        } else {
+            // 无360影视ID，直接用 Intent 传入的 URL
+            videoUrl = intent.getStringExtra(EXTRA_VIDEO_URL) ?: MockData.longVideoDetail.videoUrl
+            LogUtils.i("直接播放: id=$videoId, url=$videoUrl", "LongVideoPlayer")
+            val savedPosition = com.zhuiju.app.core.player.PlayHistoryManager.getPosition(videoId)
+            playerManager.play(videoUrl, savedPosition)
+        }
     }
 
     private fun initPlayer() {
@@ -157,7 +216,11 @@ class LongVideoPlayerActivity : AppCompatActivity(), GestureController.GestureCa
         }
         binding.btnBack.setOnClickListener { finish() }
         binding.btnRetry.setOnClickListener {
-            playerManager.play(videoUrl)
+            if (videoUrl.isNotEmpty()) {
+                playerManager.play(videoUrl)
+            } else {
+                loadVideoDetail()
+            }
         }
         binding.btnDanmaku.setOnClickListener {
             if (danmakuManager.isVisible.value) danmakuManager.hide() else danmakuManager.show()

@@ -3,10 +3,10 @@ package com.zhuiju.app.ui.find
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zhuiju.app.data.Category
-import com.zhuiju.app.data.MockData
 import com.zhuiju.app.data.Video
+import com.zhuiju.app.data.api.Q360Api
+import com.zhuiju.app.data.api.Q360Category
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,6 +14,12 @@ import kotlinx.coroutines.launch
 
 /**
  * 找片页 ViewModel —— 热门搜索 + 分类 + 分区视频 + 搜索结果
+ *
+ * 数据源：360影视 API
+ * - 热门搜索: 固定关键词列表
+ * - 分类: 360影视4大分类
+ * - 分区视频: 各分类排行榜
+ * - 搜索: 360影视搜索接口
  */
 class FindViewModel : ViewModel() {
 
@@ -38,13 +44,20 @@ class FindViewModel : ViewModel() {
 
     fun loadData() {
         viewModelScope.launch(Dispatchers.IO) {
-            delay(300)
-            _hotSearchWords.value = MockData.hotSearchWords
-            _categories.value = MockData.findCategories
-            _sectionVideos.value = MockData.findSectionVideos
+            // 热门搜索词
+            _hotSearchWords.value = listOf("庆余年", "狂飙", "流浪地球", "繁花", "漫长的季节", "三体", "甄嬛传", "琅琊榜")
+
+            // 分类
+            _categories.value = Q360Api.getCategories()
+
+            // 分区视频：取电影排行榜
+            _sectionVideos.value = Q360Api.getRank(Q360Category.MOVIE.id, 12)
         }
     }
 
+    /**
+     * 搜索视频（调用360影视搜索接口）
+     */
     fun search(keyword: String) {
         if (keyword.isBlank()) {
             _isSearching.value = false
@@ -53,13 +66,7 @@ class FindViewModel : ViewModel() {
         }
         _isSearching.value = true
         viewModelScope.launch(Dispatchers.IO) {
-            delay(500)
-            // 从所有视频中搜索标题/描述包含关键词的
-            val allVideos = MockData.discoverVideos + MockData.findSectionVideos + MockData.myWorks
-            _searchResults.value = allVideos.distinctBy { it.id }.filter {
-                it.title.contains(keyword, true) || it.description.contains(keyword, true) ||
-                    it.category.contains(keyword, true) || it.tags.any { t -> t.contains(keyword, true) }
-            }
+            _searchResults.value = Q360Api.search(keyword)
         }
     }
 

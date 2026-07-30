@@ -13,10 +13,23 @@ import okhttp3.Response
  */
 class HeaderInterceptor : Interceptor {
 
+    /** 标准移动端 UA（360影视等第三方 API 要求 MOBILE_UA） */
+    private val mobileUA =
+        "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+
     override fun intercept(chain: Interceptor.Chain): Response {
         val original = chain.request()
+        val host = original.url.host
+
+        // 第三方视频源 API 使用标准移动端 UA，自有 API 使用应用 UA
+        val ua = if (host.contains("360kan.com") || host.contains("360kan")) {
+            mobileUA
+        } else {
+            "ZhuiJuApp/${BuildConfig.VERSION_NAME} (Android)"
+        }
+
         val builder = original.newBuilder()
-            .header("User-Agent", "ZhuiJuApp/${BuildConfig.VERSION_NAME} (Android)")
+            .header("User-Agent", ua)
             .header("App-Version", BuildConfig.VERSION_NAME)
             .header("App-Version-Code", BuildConfig.VERSION_CODE.toString())
 
@@ -29,10 +42,10 @@ class HeaderInterceptor : Interceptor {
             path.endsWith(".jpg") ||
             path.endsWith(".png") ||
             path.endsWith(".webp") ||
-            original.url.host.contains("storage.googleapis.com") ||
-            original.url.host.contains("picsum.photos") ||
-            original.url.host.contains("pravatar.cc") ||
-            original.url.host.contains("i.pravatar.cc")
+            host.contains("storage.googleapis.com") ||
+            host.contains("picsum.photos") ||
+            host.contains("pravatar.cc") ||
+            host.contains("i.pravatar.cc")
 
         if (!isMediaRequest) {
             builder.header("Content-Type", "application/json; charset=utf-8")
