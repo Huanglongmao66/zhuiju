@@ -15,6 +15,7 @@ import com.zhuiju.app.data.Video
 import com.zhuiju.app.databinding.FragmentMineBinding
 import com.zhuiju.app.ui.discover.DiscoverAdapter
 import com.zhuiju.app.ui.player.LongVideoPlayerActivity
+import com.zhuiju.app.ui.settings.SettingsActivity
 import kotlinx.coroutines.launch
 
 /**
@@ -35,6 +36,11 @@ class MineFragment : BaseFragment<FragmentMineBinding>() {
     }
 
     override fun initViews() {
+        // 设置按钮
+        binding.btnSettings.setOnClickListener {
+            startActivity(Intent(requireContext(), SettingsActivity::class.java))
+        }
+
         // 配置 Tab
         binding.tabWorks.addTab(binding.tabWorks.newTab().setText("作品"))
         binding.tabWorks.addTab(binding.tabWorks.newTab().setText("私密"))

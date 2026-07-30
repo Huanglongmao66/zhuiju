@@ -58,6 +58,13 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.ZhuiJu" />
 
+        <!-- 设置页 -->
+        <activity
+            android:name=".ui.settings.SettingsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.ZhuiJu" />
+
         <!-- 视频下载服务（分片缓存、断点续传） -->
         <service
             android:name=".core.player.VideoDownloadService"

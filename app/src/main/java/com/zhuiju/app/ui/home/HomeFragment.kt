@@ -9,6 +9,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.zhuiju.app.config.AppConstants
+import com.zhuiju.app.core.player.PlaybackState
 import com.zhuiju.app.core.player.PlayerManager
 import com.zhuiju.app.core.ui.BaseFragment
 import com.zhuiju.app.databinding.FragmentHomeBinding
@@ -96,6 +97,30 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>() {
                         if (list.isNotEmpty() && !hasInitialPlayed) {
                             hasInitialPlayed = true
                             binding.viewPager.post { playAt(0) }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 监听播放状态：播放结束自动滑到下一个视频
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                playerManager?.playbackState?.collect { state ->
+                    if (state == PlaybackState.Ended) {
+                        val prefs = requireContext().getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
+                        val autoplay = prefs.getBoolean("autoplay_next", true)
+                        val loop = prefs.getBoolean("loop_play", false)
+                        if (loop) {
+                            // 循环播放：重新播放当前视频
+                            binding.viewPager.post { playAt(currentPosition) }
+                        } else if (autoplay) {
+                            // 自动播放下一个
+                            val next = currentPosition + 1
+                            if (next < adapter.itemCount) {
+                                LogUtils.i("视频播放结束，自动切换到下一个: $next", "HomeFragment")
+                                binding.viewPager.setCurrentItem(next, true)
+                            }
                         }
                     }
                 }

@@ -16,6 +16,18 @@
             app:layout_scrollFlags="scroll|exitUntilCollapsed"
             app:contentScrim="@color/color_primary">
 
+            <!-- 右上角设置按钮 -->
+            <ImageButton
+                android:id="@+id/btn_settings"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="top|end"
+                android:layout_margin="@dimen/spacing_small"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_preferences"
+                android:contentDescription="设置"
+                app:layout_collapseMode="pin" />
+
             <!-- 折叠头部：背景大图 + 头像 + 昵称 + 数据统计 -->
             <LinearLayout
                 android:layout_width="match_parent"
